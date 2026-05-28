@@ -3400,6 +3400,17 @@ trait DeltaSQLConfBase extends DeltaSQLConfUtils {
       .checkValues(Set("AUTO", "NONE", "STRICT"))
       .createWithDefault("AUTO")
 
+  val V3_ENABLED =
+    buildConf("v3.enabled")
+      .internal()
+      .doc(
+        "When true, DeltaCatalog returns DeltaTableV3 (the v3 connector: DSv2 logical plan " +
+          "kept through analysis, lowered to FileSourceScanExec / *FilesExec at planning time) " +
+          "instead of DeltaTableV2 (the v1 connector with analysis-time V2->V1 fallback). " +
+          "Default true; set to false to fall back to the unchanged v1 connector.")
+      .booleanConf
+      .createWithDefault(true)
+
   val DELTA_DF_WRITE_ALLOW_IMPLICIT_CASTS =
     buildConf("dml.insert.dfByName.allowImplicitCasts")
       .internal()
