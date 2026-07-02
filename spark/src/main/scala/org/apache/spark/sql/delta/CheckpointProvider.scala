@@ -104,6 +104,7 @@ object CheckpointProvider extends DeltaLogging {
   def apply(
       spark: SparkSession,
       snapshotDescriptor: SnapshotDescriptor,
+      deltaLog: DeltaLog,
       checksumOpt: Option[VersionChecksum],
       uninitializedCheckpointProvider: UninitializedCheckpointProvider)
       : CheckpointProvider = uninitializedCheckpointProvider match {
@@ -125,7 +126,7 @@ object CheckpointProvider extends DeltaLogging {
             uninitializedV2CheckpointProvider,
             checkpointMetadata,
             sidecarFiles,
-            snapshotDescriptor.deltaLog)
+            deltaLog)
         }
       }
     case provider: UninitializedV1OrV2ParquetCheckpointProvider
@@ -141,7 +142,7 @@ object CheckpointProvider extends DeltaLogging {
       // somebody calls a complete checkpoint provider method.
       val future = checkpointV2ThreadPool.submitNonFateSharing { spark: SparkSession =>
         readV2ActionsFromParquetCheckpoint(
-          spark, provider.logPath, provider.fileStatus, snapshotDescriptor.deltaLog.options)
+          spark, provider.logPath, provider.fileStatus, deltaLog.options)
       }
       new LazyCompleteCheckpointProvider(provider) {
         override def createCheckpointProvider(): CheckpointProvider = {
@@ -149,7 +150,7 @@ object CheckpointProvider extends DeltaLogging {
           checkpointMetadataOpt match {
             case Some(cm) =>
               require(isV2CheckpointEnabled(snapshotDescriptor))
-              V2CheckpointProvider(provider, cm, sidecarFiles, snapshotDescriptor.deltaLog)
+              V2CheckpointProvider(provider, cm, sidecarFiles, deltaLog)
             case None =>
               PreloadedCheckpointProvider(provider.topLevelFiles, provider.lastCheckpointInfoOpt)
           }

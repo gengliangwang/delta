@@ -162,7 +162,8 @@ case class AlterTableSetPropertiesDeltaCommand(
         txn.snapshot, propertyOverrides = filteredConfs)
 
       // If table redirect feature is updated, validates its property.
-      RedirectFeature.validateTableRedirect(txn.snapshot, table.catalogTable, configuration)
+      RedirectFeature.validateTableRedirect(
+        txn.snapshot, txn.snapshot.deltaLog, table.catalogTable, configuration)
       val newMetadata = metadata.copy(
         description = configuration.getOrElse(TableCatalog.PROP_COMMENT, metadata.description),
         configuration = metadata.configuration ++ filteredConfs)

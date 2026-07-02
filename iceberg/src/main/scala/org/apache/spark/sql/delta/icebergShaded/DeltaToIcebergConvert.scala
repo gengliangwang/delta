@@ -24,7 +24,7 @@ import java.util.{Base64, List => JList}
 
 import scala.util.control.NonFatal
 
-import org.apache.spark.sql.delta.{DeltaColumnMapping, DeltaConfig, DeltaConfigs, DummySnapshot, IcebergCompat, NoMapping, Snapshot, SnapshotDescriptor}
+import org.apache.spark.sql.delta.{DeltaColumnMapping, DeltaConfig, DeltaConfigs, DeltaLog, DummySnapshot, IcebergCompat, NoMapping, Snapshot, SnapshotDescriptor}
 import org.apache.spark.sql.delta.DeltaConfigs.{LOG_RETENTION, TOMBSTONE_RETENTION}
 import org.apache.spark.sql.delta.actions.{AddFile, FileAction}
 import org.apache.spark.sql.delta.metering.DeltaLogging
@@ -41,7 +41,10 @@ import org.apache.spark.unsafe.types.CalendarInterval
 /**
  * Generate Iceberg table metadata (schema, partition, etc.) from a Delta [[Snapshot]]
  */
-class DeltaToIcebergConverter(val snapshot: SnapshotDescriptor, val catalogTable: CatalogTable) {
+class DeltaToIcebergConverter(
+    val snapshot: SnapshotDescriptor,
+    val deltaLog: DeltaLog,
+    val catalogTable: CatalogTable) {
 
   // Always wrap the input in a DummySnapshot. For NoMapping snapshots the wrap also
   // decorates the schema with synthetic column-mapping IDs so the id-mode path downstream
@@ -59,8 +62,8 @@ class DeltaToIcebergConverter(val snapshot: SnapshotDescriptor, val catalogTable
         snapshot.metadata
       }
     new DummySnapshot(
-      logPath = snapshot.deltaLog.logPath,
-      deltaLog = snapshot.deltaLog,
+      logPath = deltaLog.logPath,
+      deltaLog = deltaLog,
       metadata = effectiveMetadata,
       protocolOpt = Some(snapshot.protocol))
   }

@@ -52,11 +52,13 @@ case class DeltaFileListingResult(
  */
 abstract class TahoeFileIndex(
     val spark: SparkSession,
-    override val deltaLog: DeltaLog,
+    val deltaLog: DeltaLog,
     val path: Path)
   extends FileIndex
   with SupportsRowIndexFilters
   with SnapshotDescriptor {
+
+  override def dataPath: Path = deltaLog.dataPath
 
   override def rootPaths: Seq[Path] = path :: Nil
 
@@ -225,7 +227,8 @@ abstract class TahoeFileIndexWithSnapshotDescriptor(
 class ShallowSnapshotDescriptor(
     snapshot: Snapshot,
     catalogTableOpt: Option[CatalogTable]) extends SnapshotDescriptor {
-  override val deltaLog: DeltaLog = snapshot.deltaLog
+  private val deltaLog: DeltaLog = snapshot.deltaLog
+  override def dataPath: Path = deltaLog.dataPath
   override val version: Long = snapshot.version
   override val metadata: Metadata = snapshot.metadata
   override val protocol: Protocol = snapshot.protocol

@@ -241,7 +241,8 @@ class IcebergConversionTransaction(
 
   protected val tablePath = postCommitSnapshot.deltaLog.dataPath
 
-  protected val convert = new DeltaToIcebergConverter(postCommitSnapshot, catalogTable)
+  protected val convert =
+    new DeltaToIcebergConverter(postCommitSnapshot, postCommitSnapshot.deltaLog, catalogTable)
 
   protected def icebergSchema: IcebergSchema = convert.schema
 
@@ -360,6 +361,7 @@ class IcebergConversionTransaction(
           logPath = postCommitSnapshot.path,
           deltaLog = postCommitSnapshot.deltaLog,
           metadata = prevMetadata),
+        postCommitSnapshot.deltaLog,
         catalogTable
       ).properties
 

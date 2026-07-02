@@ -169,7 +169,7 @@ trait ColumnMappingStreamingBlockedWorkflowSuiteBase extends ColumnMappingStream
               r.source.asInstanceOf[DeltaSource]
           }.get
           // same delta log but stream start version not affected
-          source.snapshotAtSourceInit.deltaLog == initialDeltaLog &&
+          source.deltaLog == initialDeltaLog &&
             source.snapshotAtSourceInit.version == 0
         }
       )

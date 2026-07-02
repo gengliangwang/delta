@@ -229,6 +229,7 @@ trait CDCReaderImpl extends CDCReaderBase {
   // scalastyle:off argcount
   def changesToDF(
       readSchemaSnapshot: SnapshotDescriptor,
+      deltaLog: DeltaLog,
       start: Long,
       end: Long,
       changes: Iterator[(Long, Seq[Action])],
@@ -238,8 +239,6 @@ trait CDCReaderImpl extends CDCReaderBase {
       useCoarseGrainedCDC: Boolean = false,
       startVersionSnapshot: Option[SnapshotDescriptor] = None): CDCVersionDiffInfo = {
   // scalastyle:on argcount
-    val deltaLog = readSchemaSnapshot.deltaLog
-
     if (end < start) {
       throw DeltaErrors.endBeforeStartVersionInCDC(start, end)
     }
@@ -630,6 +629,7 @@ trait CDCReaderImpl extends CDCReaderBase {
       start, end, catalogTableOpt, failOnDataLoss = false)
     changesToDF(
       readSchemaSnapshot.getOrElse(deltaLog.unsafeVolatileSnapshot),
+      deltaLog,
       start,
       end,
       changesWithinRange,

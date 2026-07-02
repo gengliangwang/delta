@@ -57,6 +57,7 @@ class CheckpointProviderSuite
         val compatCheckpoint = CheckpointProvider(
           spark,
           deltaLog.snapshot,
+          deltaLog,
           None,
           UninitializedV2CheckpointProvider(
             2L,

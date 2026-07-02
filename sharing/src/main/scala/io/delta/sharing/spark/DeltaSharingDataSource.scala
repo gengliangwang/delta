@@ -126,7 +126,7 @@ private[sharing] class DeltaSharingDataSource
       )
       val deltaLogPath =
         s"${DeltaSharingLogFileSystem.encode(customTablePathWithUUIDSuffix).toString}/_delta_log"
-      val (_, snapshotDescriptor) = DeltaSharingUtils.getDeltaLogAndSnapshotDescriptor(
+      val (localDeltaLog, snapshotDescriptor) = DeltaSharingUtils.getDeltaLogAndSnapshotDescriptor(
         sqlContext.sparkSession,
         deltaSharingTableMetadata,
         customTablePathWithUUIDSuffix
@@ -149,7 +149,7 @@ private[sharing] class DeltaSharingDataSource
         DeltaDataSource
           .getMetadataTrackingLogForDeltaSource(
             sqlContext.sparkSession,
-            snapshotDescriptor,
+            localDeltaLog,
             catalogTableOpt = None,
             parameters,
             mergeConsecutiveSchemaChanges = shouldMergeConsecutiveSchemas

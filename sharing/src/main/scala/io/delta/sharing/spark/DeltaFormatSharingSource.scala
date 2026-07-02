@@ -113,7 +113,7 @@ case class DeltaFormatSharingSource(
     val schemaTrackingLogOpt =
       DeltaDataSource.getMetadataTrackingLogForDeltaSource(
         spark,
-        snapshotDescriptor,
+        localDeltaLog,
         catalogTableOpt = None,
         parameters,
         // Pass in the metadata path opt so we can use it for validation

@@ -16,7 +16,7 @@
 
 package org.apache.spark.sql.delta.commands
 
-import org.apache.spark.sql.delta.{MaterializedRowCommitVersion, MaterializedRowId, Snapshot, SnapshotDescriptor}
+import org.apache.spark.sql.delta.{DeltaLog, MaterializedRowCommitVersion, MaterializedRowId, SnapshotDescriptor}
 import org.apache.spark.sql.delta.actions.{AddFile, Metadata, Protocol}
 import org.apache.spark.sql.delta.commands.VacuumCommand.generateCandidateFileMap
 import org.apache.spark.sql.delta.schema.{SchemaMergingUtils, SchemaUtils}
@@ -104,11 +104,12 @@ trait ReorgTableHelper extends Serializable {
       spark: SparkSession,
       files: Seq[AddFile],
       snapshot: SnapshotDescriptor,
+      deltaLog: DeltaLog,
       ignoreCorruptFiles: Boolean)(
       filterFileFn: StructType => Boolean): Seq[AddFile] = {
 
-    val serializedConf = new SerializableConfiguration(snapshot.deltaLog.newDeltaHadoopConf())
-    val dataPath = new Path(snapshot.deltaLog.dataPath.toString)
+    val serializedConf = new SerializableConfiguration(deltaLog.newDeltaHadoopConf())
+    val dataPath = new Path(deltaLog.dataPath.toString)
 
     import org.apache.spark.sql.delta.implicits._
 

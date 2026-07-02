@@ -16,7 +16,7 @@
 
 package org.apache.spark.sql.delta.commands
 
-import org.apache.spark.sql.delta.{DeltaColumnMapping, DeltaErrors, SnapshotDescriptor}
+import org.apache.spark.sql.delta.{DeltaColumnMapping, DeltaErrors, DeltaLog, SnapshotDescriptor}
 import org.apache.spark.sql.delta.actions.AddFile
 
 import org.apache.spark.sql.{Row, SparkSession}
@@ -103,6 +103,7 @@ sealed trait DeltaReorgOperation {
   def filterFilesToReorg(
       spark: SparkSession,
       snapshot: SnapshotDescriptor,
+      deltaLog: DeltaLog,
       files: Seq[AddFile]): Seq[AddFile]
 }
 
@@ -115,12 +116,13 @@ class DeltaPurgeOperation extends DeltaReorgOperation with ReorgTableHelper {
   override def filterFilesToReorg(
       spark: SparkSession,
       snapshot: SnapshotDescriptor,
+      deltaLog: DeltaLog,
       files: Seq[AddFile]): Seq[AddFile] = {
     val physicalSchema = DeltaColumnMapping.renameColumns(snapshot.schema)
     val protocol = snapshot.protocol
     val metadata = snapshot.metadata
     val filesWithDroppedColumns: Seq[AddFile] =
-      filterParquetFilesOnExecutors(spark, files, snapshot, ignoreCorruptFiles = false) {
+      filterParquetFilesOnExecutors(spark, files, snapshot, deltaLog, ignoreCorruptFiles = false) {
         schema => fileHasExtraColumns(schema, physicalSchema, protocol, metadata)
       }
     val filesWithDV: Seq[AddFile] = files.filter { file =>
@@ -138,6 +140,7 @@ class DeltaUpgradeUniformOperation(icebergCompatVersion: Int) extends DeltaReorg
   override def filterFilesToReorg(
       spark: SparkSession,
       snapshot: SnapshotDescriptor,
+      deltaLog: DeltaLog,
       files: Seq[AddFile]): Seq[AddFile] = {
     def shouldRewriteToBeIcebergCompatible(file: AddFile): Boolean = {
       if (file.tags == null) return true
@@ -157,9 +160,10 @@ class DeltaRewriteTypeWideningOperation extends DeltaReorgOperation with ReorgTa
   override def filterFilesToReorg(
       spark: SparkSession,
       snapshot: SnapshotDescriptor,
+      deltaLog: DeltaLog,
       files: Seq[AddFile]): Seq[AddFile] = {
     val physicalSchema = DeltaColumnMapping.renameColumns(snapshot.schema)
-    filterParquetFilesOnExecutors(spark, files, snapshot, ignoreCorruptFiles = false) {
+    filterParquetFilesOnExecutors(spark, files, snapshot, deltaLog, ignoreCorruptFiles = false) {
       schema => fileHasDifferentTypes(schema, physicalSchema)
     }
   }

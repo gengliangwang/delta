@@ -1458,11 +1458,11 @@ object CheckpointProtectionTableFeature
 
   def historyPriorToCheckpointProtectionVersionIsTruncated(
       snapshot: SnapshotDescriptor,
+      deltaLog: DeltaLog,
       catalogTableOpt: Option[CatalogTable]): Boolean = {
     val checkpointProtectionVersion = getCheckpointProtectionVersion(snapshot)
     if (checkpointProtectionVersion <= 0) return true
 
-    val deltaLog = snapshot.deltaLog
     // In most cases, the earliest checkpoint matches the version of the earliest commit. This is
     // not true for new tables that were never cleaned up. Furthermore, if there is no checkpoint it
     // means history is not truncated.

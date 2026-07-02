@@ -216,6 +216,7 @@ trait DeltaSourceCDCSupport { self: DeltaSource =>
         CDCReader
           .changesToDF(
             readSnapshotDescriptor,
+            deltaLog,
             startVersion,
             endOffset.reservoirVersion,
             groupedFileAndCommitInfoActions,

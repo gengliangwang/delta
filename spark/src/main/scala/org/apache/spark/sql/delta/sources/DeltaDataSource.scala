@@ -152,7 +152,7 @@ class DeltaDataSource
       // process would create a new entry in the schema log such that when the schema log is
       // looked up again in the execution phase, we would use the correct schema.
       DeltaDataSource.getMetadataTrackingLogForDeltaSource(
-          sqlContext.sparkSession, snapshot, catalogTableOpt, parameters,
+          sqlContext.sparkSession, snapshot.deltaLog, catalogTableOpt, parameters,
           mergeConsecutiveSchemaChanges = shouldMergeConsecutiveSchemas)
         .flatMap(_.getCurrentTrackedMetadata.map(_.dataSchema))
         .getOrElse(snapshot.schema)
@@ -188,7 +188,7 @@ class DeltaDataSource
       getSnapshotFromTableOrPath(sqlContext.sparkSession, new Path(path), parameters)
     val schemaTrackingLogOpt =
       DeltaDataSource.getMetadataTrackingLogForDeltaSource(
-        sqlContext.sparkSession, snapshot, catalogTableOpt, parameters,
+        sqlContext.sparkSession, snapshot.deltaLog, catalogTableOpt, parameters,
         // Pass in the metadata path opt so we can use it for validation
         sourceMetadataPathOpt = Some(metadataPath))
 
@@ -517,7 +517,7 @@ object DeltaDataSource extends DatabricksLogging {
    */
   def getMetadataTrackingLogForDeltaSource(
       spark: SparkSession,
-      sourceSnapshot: SnapshotDescriptor,
+      deltaLog: DeltaLog,
       catalogTableOpt: Option[CatalogTable],
       parameters: Map[String, String],
       sourceMetadataPathOpt: Option[String] = None,
@@ -534,14 +534,14 @@ object DeltaDataSource extends DatabricksLogging {
         DeltaSourceMetadataTrackingLog.create(
           spark,
           schemaTrackingLocation,
-          sourceSnapshot.deltaLog.unsafeVolatileTableId,
-          sourceSnapshot.deltaLog.dataPath.toString,
+          deltaLog.unsafeVolatileTableId,
+          deltaLog.dataPath.toString,
           parameters,
           sourceMetadataPathOpt,
           mergeConsecutiveSchemaChanges,
           consecutiveSchemaChangesMerger = Some(currentMetadata =>
             DeltaSourceMetadataEvolutionSupport.getMergedConsecutiveMetadataChanges(
-              spark, sourceSnapshot.deltaLog, catalogTableOpt, currentMetadata))
+              spark, deltaLog, catalogTableOpt, currentMetadata))
         )
       }
   }

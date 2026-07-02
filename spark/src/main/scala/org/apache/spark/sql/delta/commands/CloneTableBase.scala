@@ -196,7 +196,8 @@ abstract class CloneTableBase(
       destinationTable.createLogDirectoriesIfNotExists()
     }
 
-    val metadataToUpdate = determineTargetMetadata(spark, txn.snapshot, deltaOperation.name)
+    val metadataToUpdate =
+      determineTargetMetadata(spark, txn.snapshot, txn.deltaLog, deltaOperation.name)
     // Don't merge in the default properties when cloning, or we'll end up with different sets of
     // properties between source and target.
     txn.updateMetadata(metadataToUpdate, ignoreDefaultProperties = true)
@@ -291,6 +292,7 @@ abstract class CloneTableBase(
    */
   private def prepareSourceMetadata(
       targetSnapshot: SnapshotDescriptor,
+      deltaLog: DeltaLog,
       opName: String): Metadata = {
     var clonedMetadata =
       sourceTable.metadata.copy(
@@ -313,7 +315,7 @@ abstract class CloneTableBase(
 
     val clonedSchema =
       IdentityColumn.copySchemaWithMergedHighWaterMarks(
-        deltaLog = targetSnapshot.deltaLog,
+        deltaLog = deltaLog,
         schemaToCopy = clonedMetadata.schema,
         schemaWithHighWaterMarksToMerge = targetSnapshot.metadata.schema
       )
@@ -386,8 +388,9 @@ abstract class CloneTableBase(
   private def determineTargetMetadata(
       spark: SparkSession,
       targetSnapshot: SnapshotDescriptor,
+      deltaLog: DeltaLog,
       opName: String) : Metadata = {
-    var metadata = prepareSourceMetadata(targetSnapshot, opName)
+    var metadata = prepareSourceMetadata(targetSnapshot, deltaLog, opName)
     val validatedConfigurations = DeltaConfigs.validateConfigurations(tablePropertyOverrides)
 
     // Finalize Coordinated Commits configurations for the target

@@ -671,10 +671,10 @@ object CoordinatedCommitsUtils extends DeltaLogging {
       commitCoordinator =>
         TableCommitCoordinatorClient(
           commitCoordinator,
-          snapshotDescriptor.deltaLog.logPath,
+          deltaLog.logPath,
           snapshotDescriptor.metadata.coordinatedCommitsTableConf,
-          snapshotDescriptor.deltaLog.newDeltaHadoopConf(),
-          snapshotDescriptor.deltaLog.store
+          deltaLog.newDeltaHadoopConf(),
+          deltaLog.store
         )
     }
   }

@@ -600,12 +600,13 @@ object RedirectFeature {
 
   def validateTableRedirect(
       snapshot: SnapshotDescriptor,
+      deltaLog: DeltaLog,
       catalogTable: Option[CatalogTable],
       configs: Map[String, String]
   ): Unit = {
     val identifier = catalogTable
       .map(_.identifier.quotedString)
-      .getOrElse(s"delta.`${snapshot.deltaLog.logPath.toString}`")
+      .getOrElse(s"delta.`${deltaLog.logPath.toString}`")
     if (configs.contains(DeltaConfigs.REDIRECT_READER_WRITER.key)) {
       if (RedirectWriterOnly.isFeatureSet(snapshot.metadata)) {
         throw DeltaErrors.invalidSetUnSetRedirectCommand(

@@ -87,7 +87,7 @@ trait MetadataCleanup extends DeltaLogging {
         log"[tableId=${MDC(DeltaLogKeys.TABLE_ID, truncatedUnsafeVolatileTableId)}] " +
         log"Starting the deletion of log files older than ${MDC(DeltaLogKeys.DATE, formattedDate)}")
 
-      if (!metadataCleanupAllowed(snapshotToCleanup, fileCutOffTime.getTime)) {
+      if (!metadataCleanupAllowed(snapshotToCleanup, this, fileCutOffTime.getTime)) {
         logInfo("Metadata cleanup was skipped due to not satisfying the requirements " +
           "of CheckpointProtectionTableFeature.")
         return
@@ -200,6 +200,7 @@ trait MetadataCleanup extends DeltaLogging {
    */
   private def metadataCleanupAllowed(
       snapshot: SnapshotDescriptor,
+      deltaLog: DeltaLog,
       fileCutOffTime: Long): Boolean = {
     def expandVersionRange(currentRange: VersionRange, versionToCover: Long): VersionRange =
       versionRange(currentRange.start.min(versionToCover), currentRange.end.max(versionToCover))
@@ -211,7 +212,6 @@ trait MetadataCleanup extends DeltaLogging {
     val expiredDeltaLogs = listExpiredDeltaLogs(fileCutOffTime)
     if (expiredDeltaLogs.isEmpty) return true
 
-    val deltaLog = snapshot.deltaLog
     val toCleanVersionRange = expiredDeltaLogs
       .filter(isDeltaFile)
       .collect { case DeltaFile(_, version) => version }

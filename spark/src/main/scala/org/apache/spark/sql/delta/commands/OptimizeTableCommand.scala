@@ -316,7 +316,8 @@ class OptimizeExecutor(
 
       val filesToProcess = optimizeContext.reorg match {
         case Some(reorgOperation) =>
-          reorgOperation.filterFilesToReorg(sparkSession, snapshot, candidateFiles)
+          reorgOperation.filterFilesToReorg(
+            sparkSession, snapshot, snapshot.deltaLog, candidateFiles)
         case None =>
           filterCandidateFileList(minFileSize, maxDeletedRowsRatio, candidateFiles)
       }

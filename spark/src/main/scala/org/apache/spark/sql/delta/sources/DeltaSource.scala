@@ -34,7 +34,7 @@ import org.apache.spark.sql.delta.storage.{ClosableIterator, SupportsRewinding}
 import org.apache.spark.sql.delta.storage.ClosableIterator._
 import org.apache.spark.sql.delta.util.{DateTimeUtils, TimestampFormatter}
 import org.apache.spark.sql.util.ScalaExtensions._
-import org.apache.hadoop.fs.FileStatus
+import org.apache.hadoop.fs.{FileStatus, Path}
 
 import org.apache.spark.internal.MDC
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -152,7 +152,7 @@ trait DeltaSourceBase extends Source
     persistedMetadataAtSourceInit.map { customMetadata =>
       // Construct a snapshot descriptor with custom schema inline
       new SnapshotDescriptor {
-        val deltaLog: DeltaLog = snapshotAtSourceInit.deltaLog
+        val dataPath: Path = snapshotAtSourceInit.dataPath
         val metadata: Metadata =
           snapshotAtSourceInit.metadata.copy(
             schemaString = customMetadata.dataSchemaJson,
@@ -921,7 +921,7 @@ case class DeltaSource(
    */
   override def latestOffset(startOffset: streaming.Offset, limit: ReadLimit): streaming.Offset =
     recordDeltaOperation(
-      snapshotAtSourceInit.deltaLog, opType = "delta.streaming.source.latestOffset") {
+      deltaLog, opType = "delta.streaming.source.latestOffset") {
     val deltaStartOffset = Option(startOffset).map(toDeltaSourceOffset)
     initForTriggerAvailableNowIfNeeded(deltaStartOffset)
     latestOffsetInternal(deltaStartOffset, limit).orNull
@@ -1067,7 +1067,7 @@ case class DeltaSource(
 
   override def getBatch(startOffsetOption: Option[Offset], end: Offset): DataFrame =
     recordDeltaOperation(
-      snapshotAtSourceInit.deltaLog, opType = "delta.streaming.source.getBatch") {
+      deltaLog, opType = "delta.streaming.source.getBatch") {
     val endOffset = toDeltaSourceOffset(end)
     val startDeltaOffsetOption = startOffsetOption.map(toDeltaSourceOffset)
 
@@ -1211,7 +1211,7 @@ case class DeltaSource(
   // This happens AFTER `end` offset is committed by the streaming engine so we can safely fail this
   // if needed, e.g. for failing the stream to conduct schema evolution.
   override def commit(end: Offset): Unit =
-    recordDeltaOperation(snapshotAtSourceInit.deltaLog, opType = "delta.streaming.source.commit") {
+    recordDeltaOperation(deltaLog, opType = "delta.streaming.source.commit") {
     super.commit(end)
     // IMPORTANT: for future developers, please place any work you would like to do in commit()
     // before `updateSchemaTrackingLogAndFailTheStreamIfNeeded(end)` as it may throw an exception.

@@ -24,6 +24,7 @@ import scala.collection.mutable
 import scala.util.Try
 
 import com.databricks.spark.util.TagDefinition
+import com.databricks.spark.util.TagDefinitions.{TAG_TAHOE_ID, TAG_TAHOE_PATH}
 import org.apache.spark.sql.delta.actions._
 import org.apache.spark.sql.delta.actions.Action.logSchema
 import org.apache.spark.sql.delta.ClassicColumnConversions._
@@ -60,10 +61,16 @@ import org.apache.spark.util.Utils
  * metadata, protocol, and version.
  */
 trait SnapshotDescriptor extends DeltaLoggingProvider {
-  def deltaLog: DeltaLog
   def version: Long
   def metadata: Metadata
   def protocol: Protocol
+
+  /**
+   * The path of the table's data directory. Kept as a bare [[Path]] (rather than reaching
+   * through a [[DeltaLog]]) so that this trait carries no dependency on [[DeltaLog]], allowing
+   * non-Spark (e.g. Delta Kernel-backed) implementations.
+   */
+  def dataPath: Path
 
   def schema: StructType = metadata.schema
 
@@ -78,10 +85,12 @@ trait SnapshotDescriptor extends DeltaLoggingProvider {
 
   /**
    * Recording tags for this snapshot, anchored to the snapshot's own `metadata.id` (as opposed to
-   * the latest volatile metadata id that a bare [[DeltaLog]] would report).
+   * the latest volatile metadata id that a bare [[DeltaLog]] would report). Mirrors
+   * [[DeltaLog.getCommonTags]] but sources the path from [[dataPath]] instead of a [[DeltaLog]].
    */
-  override def getCommonTags: Map[TagDefinition, String] =
-    deltaLog.getCommonTags(Try(metadata.id).getOrElse(null))
+  override def getCommonTags: Map[TagDefinition, String] = Map(
+    TAG_TAHOE_ID -> Try(metadata.id).getOrElse(null),
+    TAG_TAHOE_PATH -> Try(dataPath.toString).getOrElse(null))
 }
 
 /**
@@ -125,6 +134,8 @@ class Snapshot(
 
   /** Snapshot to scan by the DeltaScanGenerator for metadata query optimizations */
   override val snapshotToScan: Snapshot = this
+
+  override def dataPath: Path = deltaLog.dataPath
 
   override def columnMappingMode: DeltaColumnMappingMode = metadata.columnMappingMode
 
@@ -685,7 +696,7 @@ class Snapshot(
   lazy val checkpointProvider: CheckpointProvider = logSegment.checkpointProvider match {
     case cp: CheckpointProvider => cp
     case uninitializedProvider: UninitializedCheckpointProvider =>
-      CheckpointProvider(spark, this, checksumOpt, uninitializedProvider)
+      CheckpointProvider(spark, this, deltaLog, checksumOpt, uninitializedProvider)
     case o => throw new IllegalStateException(s"Unknown checkpoint provider: ${o.getClass.getName}")
   }
 
