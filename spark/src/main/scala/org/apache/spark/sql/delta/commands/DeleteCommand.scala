@@ -272,7 +272,7 @@ case class DeleteCommand(
           val nameToAddFileMap = generateCandidateFileMap(deltaLog.dataPath, candidateFiles)
 
           val fileIndex = new TahoeBatchFileIndex(
-            sparkSession, "delete", candidateFiles, deltaLog, deltaLog.dataPath, txn.snapshot)
+            sparkSession, "delete", candidateFiles, deltaLog.dataPath, txn.snapshot)
           if (shouldWriteDVs) {
             val targetDf = DMLWithDeletionVectorsHelper.createTargetDfForScanningForMatches(
               sparkSession,

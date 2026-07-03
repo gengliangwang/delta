@@ -25,7 +25,7 @@ import org.apache.spark.sql.delta.metric.IncrementMetric
 import org.apache.spark.sql.delta._
 import org.apache.spark.sql.delta.actions.{Action, AddFile, FileAction}
 import org.apache.spark.sql.delta.commands.merge.{MergeIntoMaterializeSource, MergeIntoMaterializeSourceReason, MergeStats}
-import org.apache.spark.sql.delta.files.{TahoeBatchFileIndex, TahoeFileIndex, TransactionalWrite}
+import org.apache.spark.sql.delta.files.{TahoeBatchFileIndex, TahoeFileIndex, TahoeLogFileIndex, TransactionalWrite}
 import org.apache.spark.sql.delta.metering.DeltaLogging
 import org.apache.spark.sql.delta.schema.{ImplicitMetadataOperation, SchemaUtils}
 import org.apache.spark.sql.delta.sources.DeltaSQLConf
@@ -50,7 +50,7 @@ trait MergeIntoCommandBase extends LeafRunnableCommand
 
   @transient val source: LogicalPlan
   @transient val target: LogicalPlan
-  @transient val targetFileIndex: TahoeFileIndex
+  @transient val targetFileIndex: TahoeLogFileIndex
   val condition: Expression
   val matchedClauses: Seq[DeltaMergeIntoMatchedClause]
   val notMatchedClauses: Seq[DeltaMergeIntoNotMatchedClause]
@@ -316,7 +316,6 @@ trait MergeIntoCommandBase extends LeafRunnableCommand
       spark,
       actionType = "batch",
       files,
-      deltaTxn.deltaLog,
       targetFileIndex.path,
       deltaTxn.snapshot)
 

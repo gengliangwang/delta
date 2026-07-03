@@ -615,7 +615,7 @@ class DeltaLog private(
     // It's ok to not pass down the partitionSchema to TahoeBatchFileIndex. Schema evolution will
     // ensure any partitionSchema changes will be captured, and upon restart, the new snapshot will
     // be initialized with the correct partition schema again.
-    val fileIndex = new TahoeBatchFileIndex(spark, actionType, addFiles, this, dataPath, snapshot)
+    val fileIndex = new TahoeBatchFileIndex(spark, actionType, addFiles, dataPath, snapshot)
     // Drop null type columns from the relation's schema if it's not a streaming query until
     // null type columns are fully supported.
     val dropNullTypeColumnsFromSchema = if (isStreaming) {

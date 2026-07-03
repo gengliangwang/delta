@@ -128,7 +128,7 @@ case class DeltaSink(
     // MicroBatchExecution has already enforced all the data skipping (by forcing the generation
     // of the executed plan) even before the transaction was started.
     val selfScan = data.queryExecution.analyzed.collectFirst {
-      case DeltaTable(index) if index.deltaLog.isSameLogAs(txn.deltaLog) => true
+      case DeltaTable(index) if index.compositeId == txn.deltaLog.compositeId => true
     }.nonEmpty
     if (selfScan) {
       txn.readWholeTable()

@@ -201,7 +201,6 @@ trait MergeIntoDVsTests extends MergeIntoDVsMixin {
         spark,
         actionType = "merge",
         addFiles = allFiles,
-        deltaLog = targetLog,
         path = targetLog.dataPath,
         snapshot = txn.snapshot)
 

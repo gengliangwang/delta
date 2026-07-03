@@ -387,7 +387,8 @@ trait CDCReaderImpl extends CDCReaderBase {
       dfs.append(scanIndex(
         spark,
         new TahoeChangeFileIndex(
-          spark, changeFiles.toSeq, deltaLog, deltaLog.dataPath, readSchemaSnapshot),
+          spark, changeFiles.toSeq, deltaLog.dataPath, readSchemaSnapshot),
+        deltaLog,
         isStreaming))
     }
 
@@ -501,7 +502,8 @@ trait CDCReaderImpl extends CDCReaderBase {
       dfAddsAndRemoves.append(
         scanIndex(
           spark,
-          new CdcAddFileIndex(spark, finalAddFilesSpecs, deltaLog, deltaLog.dataPath, snapshot),
+          new CdcAddFileIndex(spark, finalAddFilesSpecs, deltaLog.dataPath, snapshot),
+          deltaLog,
           isStreaming))
     }
 
@@ -512,9 +514,9 @@ trait CDCReaderImpl extends CDCReaderBase {
           new TahoeRemoveFileIndex(
             spark,
             finalRemoveFilesSpecs,
-            deltaLog,
             deltaLog.dataPath,
             snapshot),
+          deltaLog,
           isStreaming))
     }
 
@@ -574,11 +576,11 @@ trait CDCReaderImpl extends CDCReaderBase {
           new CdcAddFileIndex(
             spark,
             Seq(new CDCDataSpec(tableVersion, addFiles.toSeq, commitInfo)),
-            deltaLog,
             deltaLog.dataPath,
             snapshot,
             rowIndexFilters =
               Some(fileActionsToIfNotContainedRowIndexFilters(addFiles.toSeq))),
+          deltaLog,
           isStreaming))
     }
 
@@ -592,11 +594,11 @@ trait CDCReaderImpl extends CDCReaderBase {
           new TahoeRemoveFileIndex(
             spark,
             Seq(new CDCDataSpec(tableVersion, removeFiles.toSeq, commitInfo)),
-            deltaLog,
             deltaLog.dataPath,
             snapshot,
             rowIndexFilters =
               Some(fileActionsToIfNotContainedRowIndexFilters(removeFiles.toSeq))),
+          deltaLog,
           isStreaming))
     }
 
@@ -650,6 +652,7 @@ trait CDCReaderImpl extends CDCReaderBase {
   protected def scanIndex(
       spark: SparkSession,
       index: TahoeFileIndexWithSnapshotDescriptor,
+      deltaLog: DeltaLog,
       isStreaming: Boolean = false): DataFrame = {
 
     val relation = HadoopFsRelation(
@@ -658,7 +661,7 @@ trait CDCReaderImpl extends CDCReaderBase {
       dataSchema = cdcReadSchema(index.schema),
       bucketSpec = None,
       new DeltaParquetFileFormat(index.protocol, index.metadata, isCDCRead = true),
-      options = index.deltaLog.options)(spark)
+      options = deltaLog.options)(spark)
     val plan = LogicalRelation(relation, isStreaming = isStreaming)
     DataFrameUtils.ofRows(spark, plan)
   }

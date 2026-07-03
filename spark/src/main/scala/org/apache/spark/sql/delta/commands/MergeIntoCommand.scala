@@ -64,7 +64,7 @@ case class MergeIntoCommand(
     @transient source: LogicalPlan,
     @transient target: LogicalPlan,
     @transient catalogTable: Option[CatalogTable],
-    @transient targetFileIndex: TahoeFileIndex,
+    @transient targetFileIndex: TahoeLogFileIndex,
     condition: Expression,
     matchedClauses: Seq[DeltaMergeIntoMatchedClause],
     notMatchedClauses: Seq[DeltaMergeIntoNotMatchedClause],

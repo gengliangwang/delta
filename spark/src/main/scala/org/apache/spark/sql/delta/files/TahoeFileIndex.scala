@@ -52,13 +52,17 @@ case class DeltaFileListingResult(
  */
 abstract class TahoeFileIndex(
     val spark: SparkSession,
-    val deltaLog: DeltaLog,
     val path: Path)
   extends FileIndex
   with SupportsRowIndexFilters
   with SnapshotDescriptor {
 
-  override def dataPath: Path = deltaLog.dataPath
+  /**
+   * Composite identity of the table this index reads, matching [[DeltaLog.compositeId]]
+   * (`(tableId, dataPath)`) but sourced from this index's [[SnapshotDescriptor]] so it carries no
+   * dependency on [[DeltaLog]]. Uses the snapshot's own `metadata.id` as the table id.
+   */
+  def compositeId: (String, Path) = metadata.id -> dataPath
 
   override def rootPaths: Seq[Path] = path :: Nil
 
@@ -206,9 +210,10 @@ abstract class TahoeFileIndex(
 /** A [[TahoeFileIndex]] that works with a specific [[SnapshotDescriptor]]. */
 abstract class TahoeFileIndexWithSnapshotDescriptor(
     spark: SparkSession,
-    deltaLog: DeltaLog,
     path: Path,
-    snapshot: SnapshotDescriptor) extends TahoeFileIndex(spark, deltaLog, path) {
+    snapshot: SnapshotDescriptor) extends TahoeFileIndex(spark, path) {
+
+  override def dataPath: Path = snapshot.dataPath
 
   override def version: Long = snapshot.version
   override def metadata: Metadata = snapshot.metadata
@@ -247,13 +252,15 @@ class ShallowSnapshotDescriptor(
  */
 case class TahoeLogFileIndex(
     override val spark: SparkSession,
-    override val deltaLog: DeltaLog,
+    deltaLog: DeltaLog,
     override val path: Path,
     snapshotAtAnalysis: SnapshotDescriptor,
     catalogTableOpt: Option[CatalogTable],
     partitionFilters: Seq[Expression],
     isTimeTravelQuery: Boolean)
-  extends TahoeFileIndex(spark, deltaLog, path) {
+  extends TahoeFileIndex(spark, path) {
+
+  override def dataPath: Path = deltaLog.dataPath
 
   def this(
     spark: SparkSession,
@@ -402,11 +409,10 @@ class TahoeBatchFileIndex(
     spark: SparkSession,
     val actionType: String,
     val addFiles: Seq[AddFile],
-    deltaLog: DeltaLog,
     path: Path,
     val snapshot: SnapshotDescriptor,
     val partitionFiltersGenerated: Boolean = false)
-  extends TahoeFileIndexWithSnapshotDescriptor(spark, deltaLog, path, snapshot) {
+  extends TahoeFileIndexWithSnapshotDescriptor(spark, path, snapshot) {
 
   override def matchingFiles(
       partitionFilters: Seq[Expression],

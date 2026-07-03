@@ -46,12 +46,11 @@ import org.apache.spark.sql.types.StructType
 class CdcAddFileIndex(
     spark: SparkSession,
     filesByVersion: Seq[CDCDataSpec[AddFile]],
-    deltaLog: DeltaLog,
     path: Path,
     snapshot: SnapshotDescriptor,
     override val rowIndexFilters: Option[Map[String, RowIndexFilterType]] = None
   ) extends TahoeBatchFileIndex(
-    spark, "cdcRead", filesByVersion.flatMap(_.actions), deltaLog, path, snapshot) {
+    spark, "cdcRead", filesByVersion.flatMap(_.actions), path, snapshot) {
 
   override def matchingFiles(
       partitionFilters: Seq[Expression],

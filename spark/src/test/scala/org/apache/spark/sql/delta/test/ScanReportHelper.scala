@@ -115,7 +115,7 @@ trait ScanReportHelper extends SharedSparkSession with AdaptiveSparkPlanHelper {
                 unusedFilters = Nil,
                 size = Map(
                   "total" -> DataSize(
-                    bytesCompressed = Some(deltaTable.deltaLog.unsafeVolatileSnapshot.sizeInBytes)),
+                    bytesCompressed = Some(deltaTable.sizeInBytes)),
                   "scanned" -> DataSize(bytesCompressed = Some(deltaTable.sizeInBytes))
                 ),
                 metrics = scanExec.metrics.mapValues(_.value).toMap,

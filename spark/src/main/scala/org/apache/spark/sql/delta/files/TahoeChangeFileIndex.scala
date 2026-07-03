@@ -38,10 +38,9 @@ import org.apache.spark.sql.types.{LongType, StructType, TimestampType}
 class TahoeChangeFileIndex(
     spark: SparkSession,
     val filesByVersion: Seq[CDCDataSpec[AddCDCFile]],
-    deltaLog: DeltaLog,
     path: Path,
     snapshot: SnapshotDescriptor)
-  extends TahoeFileIndexWithSnapshotDescriptor(spark, deltaLog, path, snapshot) {
+  extends TahoeFileIndexWithSnapshotDescriptor(spark, path, snapshot) {
 
   override def matchingFiles(
       partitionFilters: Seq[Expression],

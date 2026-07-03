@@ -512,7 +512,6 @@ trait ClassicMergeExecutor extends MergeOutputGeneration {
       spark,
       actionType = "merge",
       addFiles = filesToRewrite,
-      deltaLog = deltaTxn.deltaLog,
       path = deltaTxn.deltaLog.dataPath,
       snapshot = deltaTxn.snapshot)
 

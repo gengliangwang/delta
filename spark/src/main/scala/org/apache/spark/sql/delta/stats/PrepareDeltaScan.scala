@@ -98,7 +98,6 @@ trait PrepareDeltaScanBase extends Rule[LogicalPlan]
       "Partition filters should have been extracted by DeltaAnalysis.")
     PreparedDeltaFileIndex(
       spark,
-      fileIndex.deltaLog,
       fileIndex.path,
       fileIndex.catalogTableOpt,
       preparedScan,
@@ -215,10 +214,10 @@ trait PrepareDeltaScanBase extends Rule[LogicalPlan]
     // If this query is running inside an active transaction and is touching the same table
     // as the transaction, then mark that the entire table as tainted to be safe.
     OptimisticTransaction.getActive().foreach { txn =>
-      val logsInPlan = plan.collect { case DeltaTable(fileIndex: TahoeFileIndex) =>
-        fileIndex.deltaLog
+      val compositeIdsInPlan = plan.collect { case DeltaTable(fileIndex: TahoeFileIndex) =>
+        fileIndex.compositeId
       }
-      if (logsInPlan.exists(_.isSameLogAs(txn.deltaLog))) {
+      if (compositeIdsInPlan.contains(txn.deltaLog.compositeId)) {
         txn.readWholeTable()
       }
     }
@@ -342,12 +341,11 @@ object PrepareDeltaScanBase {
  */
 case class PreparedDeltaFileIndex(
     override val spark: SparkSession,
-    override val deltaLog: DeltaLog,
     override val path: Path,
     catalogTableOpt: Option[CatalogTable],
     preparedScan: DeltaScan,
     versionScanned: Option[Long])
-  extends TahoeFileIndexWithSnapshotDescriptor(spark, deltaLog, path, preparedScan.scannedSnapshot)
+  extends TahoeFileIndexWithSnapshotDescriptor(spark, path, preparedScan.scannedSnapshot)
   with DeltaLogging {
 
   /**
@@ -389,7 +387,7 @@ case class PreparedDeltaFileIndex(
       val files = preparedScan.scannedSnapshot.filesForScan(partitionFilters ++ dataFilters).files
       (files, eventData)
     }
-    recordDeltaEvent(deltaLog,
+    recordDeltaEvent(preparedScan.scannedSnapshot,
       opType = "delta.preparedDeltaFileIndex.reuseSkippingResult",
       data = eventData)
     addFiles
@@ -412,13 +410,13 @@ case class PreparedDeltaFileIndex(
 
   override def equals(other: Any): Boolean = other match {
     case p: PreparedDeltaFileIndex =>
-      p.deltaLog == deltaLog && p.path == path && p.preparedScan == preparedScan &&
+      p.dataPath == dataPath && p.path == path && p.preparedScan == preparedScan &&
         p.partitionSchema == partitionSchema && p.versionScanned == versionScanned
     case _ => false
   }
 
   override def hashCode(): Int = {
-    Objects.hash(deltaLog, path, preparedScan, partitionSchema, versionScanned)
+    Objects.hash(dataPath, path, preparedScan, partitionSchema, versionScanned)
   }
 
 }

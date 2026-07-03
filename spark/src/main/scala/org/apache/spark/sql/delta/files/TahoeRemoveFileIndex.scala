@@ -45,11 +45,10 @@ import org.apache.spark.sql.types.StructType
 class TahoeRemoveFileIndex(
     spark: SparkSession,
     val filesByVersion: Seq[CDCDataSpec[RemoveFile]],
-    deltaLog: DeltaLog,
     path: Path,
     snapshot: SnapshotDescriptor,
     override val rowIndexFilters: Option[Map[String, RowIndexFilterType]] = None
-  ) extends TahoeFileIndexWithSnapshotDescriptor(spark, deltaLog, path, snapshot) {
+  ) extends TahoeFileIndexWithSnapshotDescriptor(spark, path, snapshot) {
 
   override def matchingFiles(
       partitionFilters: Seq[Expression],

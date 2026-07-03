@@ -26,7 +26,7 @@ import org.apache.spark.sql.delta._
 import org.apache.spark.sql.delta.ClassicColumnConversions._
 import org.apache.spark.sql.delta.actions.{Action, AddCDCFile, AddFile, FileAction}
 import org.apache.spark.sql.delta.commands.cdc.CDCReader.{CDC_TYPE_COLUMN_NAME, CDC_TYPE_NOT_CDC, CDC_TYPE_UPDATE_POSTIMAGE, CDC_TYPE_UPDATE_PREIMAGE}
-import org.apache.spark.sql.delta.files.{TahoeBatchFileIndex, TahoeFileIndex}
+import org.apache.spark.sql.delta.files.{TahoeBatchFileIndex, TahoeLogFileIndex}
 import org.apache.spark.sql.delta.sources.DeltaSQLConf
 import org.apache.spark.sql.delta.stats.StatsCollectionUtils
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
@@ -57,7 +57,7 @@ import org.apache.spark.sql.types.LongType
  *      the affected files that are identified in step 1.
  */
 case class UpdateCommand(
-    tahoeFileIndex: TahoeFileIndex,
+    tahoeFileIndex: TahoeLogFileIndex,
     catalogTable: Option[CatalogTable],
     target: LogicalPlan,
     updateExpressions: Seq[Expression],
@@ -157,7 +157,7 @@ case class UpdateCommand(
     } else {
       // Case 3: Find all the affected files using the user-specified condition
       val fileIndex = new TahoeBatchFileIndex(
-        sparkSession, "update", candidateFiles, deltaLog, tahoeFileIndex.path, txn.snapshot)
+        sparkSession, "update", candidateFiles, tahoeFileIndex.path, txn.snapshot)
 
       val touchedFilesWithDV = if (shouldWriteDeletionVectors) {
         // Case 3.1: Find all the affected files via DV path

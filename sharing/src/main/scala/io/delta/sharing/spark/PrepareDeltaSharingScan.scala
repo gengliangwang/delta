@@ -57,7 +57,6 @@ class PrepareDeltaSharingScan(override val spark: SparkSession) extends PrepareD
         }
         val preparedIndex = PreparedDeltaFileIndex(
           spark,
-          deltaLog,
           deltaLog.dataPath,
           catalogTableOpt = None,
           preparedScan = deltaScan,

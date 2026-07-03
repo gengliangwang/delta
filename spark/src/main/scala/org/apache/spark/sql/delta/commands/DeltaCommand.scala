@@ -147,7 +147,7 @@ trait DeltaCommand extends DeltaLogging with DeltaCommandInvariants {
     val deltaLog = txn.deltaLog
     val scannedFiles = inputLeafFiles.map(f => getTouchedFile(rootPath, f, nameToAddFileMap))
     val fileIndex = new TahoeBatchFileIndex(
-      spark, actionType, scannedFiles, deltaLog, rootPath, txn.snapshot)
+      spark, actionType, scannedFiles, rootPath, txn.snapshot)
     HadoopFsRelation(
       fileIndex,
       partitionSchema = txn.metadata.partitionSchema,
